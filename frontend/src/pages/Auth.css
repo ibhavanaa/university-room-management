@@ -10,7 +10,7 @@
 
 .auth-card {
   width: 100%;
-  max-width: 800px; /* Much wider for horizontal layout */
+  max-width: 560px; /* Narrower for single-column layout */
   min-height: auto; /* Remove fixed height */
   background: white;
   padding: 3rem;
@@ -160,10 +160,10 @@
   100% { transform: rotate(360deg); }
 }
 
-/* Two-column layout for register form */
+/* Single-column layout for register form */
 .register-columns {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr; /* Force single column */
   gap: 1.5rem;
 }
 
@@ -174,14 +174,14 @@
 /* Responsive Design */
 @media (max-width: 900px) {
   .auth-card {
-    max-width: 600px;
+    max-width: 520px;
     padding: 2.5rem;
   }
 }
 
 @media (max-width: 768px) {
   .auth-card {
-    max-width: 500px;
+    max-width: 460px;
     padding: 2rem;
   }
   
