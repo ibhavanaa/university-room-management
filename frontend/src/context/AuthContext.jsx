@@ -1,81 +1,58 @@
-// src/context/AuthContext.jsx
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { authService } from '../services/auth';
+import React, { createContext, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
-const AuthContext = createContext();
-
-export const useAuth = () => {
-  return useContext(AuthContext);
-};
+export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState(null);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userStr = localStorage.getItem('user');
+    // Check if user data exists in localStorage
+    const token = localStorage.getItem("token");
+    const userData = localStorage.getItem("user");
     
-    let user = null;
-    if (userStr) {
+    if (token && userData) {
       try {
-        user = JSON.parse(userStr);
+        const parsedUser = JSON.parse(userData);
+        setUser(parsedUser);
       } catch (error) {
-        console.error('Error parsing user data from localStorage:', error);
-        // Clear invalid data
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
+        console.error("Error parsing user data:", error);
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
       }
-    }
-    
-    if (token && user) {
-      setCurrentUser(user);
     }
     setLoading(false);
   }, []);
 
-  const login = async (email, password) => {
-    try {
-      const response = await authService.login(email, password);
-      const { token, user } = response.data;
-      
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-      setCurrentUser(user);
-      
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  const register = async (userData) => {
-    try {
-      const response = await authService.register(userData);
-      return response;
-    } catch (error) {
-      throw error;
-    }
+  const login = (userData) => {
+    setUser(userData);
+    localStorage.setItem("user", JSON.stringify(userData));
+    localStorage.setItem("token", userData.token);
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setCurrentUser(null);
-    window.location.href = '/login';
+    setUser(null);
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    navigate("/login");
   };
 
-  const value = {
-    currentUser,
-    login,
-    register,
-    logout,
-    isAuthenticated: !!currentUser
+  const updateUser = (updatedUserData) => {
+    setUser(updatedUserData);
+    localStorage.setItem("user", JSON.stringify(updatedUserData));
   };
 
   return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
+    <AuthContext.Provider value={{ 
+      user, 
+      login, 
+      logout, 
+      updateUser,
+      loading 
+    }}>
+      {children}
     </AuthContext.Provider>
   );
 };
