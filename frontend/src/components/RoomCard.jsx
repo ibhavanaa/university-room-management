@@ -1,4 +1,3 @@
-// src/components/RoomCard.jsx
 import React from "react";
 import { MapPin, Users, Calendar, Edit3, Trash2 } from "lucide-react";
 

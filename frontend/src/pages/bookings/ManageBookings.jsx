@@ -1,4 +1,3 @@
-// src/pages/bookings/ManageBookings.jsx
 import React, { useState, useEffect } from 'react';
 import { getAllBookings, updateBookingStatus } from '../../services/bookingService';
 import BookingCard from '../../components/BookingCard';

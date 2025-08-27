@@ -1,10 +1,9 @@
 const Maintenance = require('../models/Maintenance');
 const Room = require('../models/Room');
 
-// @desc    Submit a maintenance request
-// @route   POST /api/maintenance
-// @access  Student/Faculty
-// src/controllers/maintenanceController.js
+// description    Submit a maintenance request
+// route   POST /api/maintenance
+// access  Student/Faculty
 exports.createMaintenanceRequest = async (req, res) => {
     try {
         const { room, issueDescription } = req.body;
@@ -43,9 +42,9 @@ exports.createMaintenanceRequest = async (req, res) => {
     }
 };
 
-// @desc    Get my maintenance requests
-// @route   GET /api/maintenance/my
-// @access  Student/Faculty
+// description    Get my maintenance requests
+// route   GET /api/maintenance/my
+// access  Student/Faculty
 exports.getMyRequests = async (req, res) => {
     try {
         const requests = await Maintenance.find({ user: req.user._id })
@@ -56,9 +55,9 @@ exports.getMyRequests = async (req, res) => {
     }
 };
 
-// @desc    Get all maintenance requests (Admin)
-// @route   GET /api/maintenance
-// @access  Admin
+// desc    Get all maintenance requests (Admin)
+// route   GET /api/maintenance
+// access  Admin
 exports.getAllRequests = async (req, res) => {
     try {
         const requests = await Maintenance.find()
@@ -70,9 +69,9 @@ exports.getAllRequests = async (req, res) => {
     }
 };
 
-// @desc    Update maintenance request status
-// @route   PUT /api/maintenance/:id
-// @access  Admin
+// desc    Update maintenance request status
+// route   PUT /api/maintenance/:id
+// access  Admin
 exports.updateRequestStatus = async (req, res) => {
     try {
         const request = await Maintenance.findById(req.params.id);

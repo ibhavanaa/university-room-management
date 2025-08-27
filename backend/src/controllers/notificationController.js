@@ -1,8 +1,8 @@
 const Notification = require('../models/Notification');
 
-// @desc    Create a new notification (Admin)
-// @route   POST /api/notifications
-// @access  Admin
+// desc    Create a new notification (Admin)
+// route   POST /api/notifications
+// access  Admin
 exports.createNotification = async (req, res) => {
     try {
         const { message, urgencyLevel } = req.body;
@@ -18,9 +18,9 @@ exports.createNotification = async (req, res) => {
     }
 };
 
-// @desc    Get all notifications
-// @route   GET /api/notifications
-// @access  Student/Faculty/Admin
+// desc    Get all notifications
+// route   GET /api/notifications
+// access  Student/Faculty/Admin
 exports.getNotifications = async (req, res) => {
     try {
         const notifications = await Notification.find().sort({ createdAt: -1 });

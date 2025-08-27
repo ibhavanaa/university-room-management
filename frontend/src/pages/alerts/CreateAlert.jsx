@@ -8,7 +8,7 @@ function CreateAlert() {
     e.preventDefault();
     // TODO: POST /api/alerts
     console.log({ message, type });
-    alert("Alert created successfully ✅");
+    alert("Alert created successfully ");
     setMessage("");
     setType("info");
   };

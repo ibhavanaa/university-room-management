@@ -1,4 +1,3 @@
-// src/pages/admin/AnalyticsDashboard.jsx
 import React, { useEffect, useState } from "react";
 import bookingService from "../../services/bookingService";
 import maintenanceService from "../../services/maintenanceService";

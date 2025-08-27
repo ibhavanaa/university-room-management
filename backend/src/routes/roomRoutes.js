@@ -9,7 +9,7 @@ const {
 } = require('../controllers/roomController');
 const { protect, authorizeRoles } = require('../middlewares/authMiddleware');
 
-// ✅ Import timetable routes
+// Import timetable routes
 const timetableRoutes = require('./timetableRoutes');
 
 const router = express.Router();

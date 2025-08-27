@@ -1,4 +1,3 @@
-// src/components/BookingCard.jsx
 import React, { useState } from "react";
 import { 
   Calendar, 

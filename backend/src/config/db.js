@@ -8,7 +8,7 @@ const connectDB = async () => {
         });
         console.log(`MongoDB Connected: ${conn.connection.host}`);
 
-        // Ensure indexes are created in the background
+        // Indexes are created in the background
         await mongoose.connection.syncIndexes();
         console.log('Mongoose indexes synchronized');
     } catch (error) {

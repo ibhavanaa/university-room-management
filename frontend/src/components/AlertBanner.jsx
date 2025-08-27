@@ -1,4 +1,3 @@
-// src/components/AlertBanner.jsx
 import React from "react";
 import { AlertTriangle, X, Info, CheckCircle } from "lucide-react";
 import { formatDate } from "../utils/formatDate";

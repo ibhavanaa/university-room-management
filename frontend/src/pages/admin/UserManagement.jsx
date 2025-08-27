@@ -1,4 +1,3 @@
-// src/pages/admin/UserManagement.jsx
 import React, { useEffect, useState } from "react";
 import userService from "../../services/userService";
 

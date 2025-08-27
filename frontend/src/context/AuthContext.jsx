@@ -54,5 +54,5 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-// ✅ convenience hook
+//  convenience hook
 export const useAuth = () => useContext(AuthContext);

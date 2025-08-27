@@ -47,9 +47,9 @@ mongoose.connect(process.env.MONGO_URI).then(async () => {
         await room.save();
     }
 
-    console.log('🟢 Timetable seeded with 5 days for all rooms');
+    console.log(' Timetable seeded with 5 days for all rooms');
     process.exit();
 }).catch(err => {
-    console.error('❌ Error seeding timetable:', err);
+    console.error(' Error seeding timetable:', err);
     process.exit(1);
 });

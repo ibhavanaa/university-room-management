@@ -18,7 +18,7 @@ router.post(
     uploadTimetable
 );
 
-// ✅ Get timetable for a specific room (by roomId)
+// Get timetable for a specific room (by roomId)
 router.get(
     '/:roomId',
     protect,

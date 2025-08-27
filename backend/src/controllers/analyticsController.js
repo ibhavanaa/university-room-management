@@ -3,9 +3,9 @@ const Booking = require('../models/Booking');
 const Maintenance = require('../models/Maintenance');
 const Room = require('../models/Room');
 
-// @desc    Get user counts by role
-// @route   GET /api/analytics/users
-// @access  Admin
+// description    Get user counts by role
+// route   GET /api/analytics/users
+// access  Admin
 exports.getUserStats = async (req, res) => {
     try {
         const users = await User.aggregate([
@@ -18,9 +18,9 @@ exports.getUserStats = async (req, res) => {
     }
 };
 
-// @desc    Get most booked rooms
-// @route   GET /api/analytics/booked-rooms
-// @access  Admin
+// description    Get most booked rooms
+// route   GET /api/analytics/booked-rooms
+// access  Admin
 exports.getMostBookedRooms = async (req, res) => {
     try {
         const bookedRooms = await Booking.aggregate([
@@ -38,9 +38,9 @@ exports.getMostBookedRooms = async (req, res) => {
     }
 };
 
-// @desc    Get maintenance requests per month
-// @route   GET /api/analytics/maintenance
-// @access  Admin
+// description    Get maintenance requests per month
+// route   GET /api/analytics/maintenance
+// access  Admin
 exports.getMaintenanceStats = async (req, res) => {
     try {
         const maintenanceStats = await Maintenance.aggregate([

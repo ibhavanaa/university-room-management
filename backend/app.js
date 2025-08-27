@@ -50,9 +50,9 @@ app.get('/', (req, res) => {
 app.get('/test-db', async (req, res) => {
     try {
         const collections = await mongoose.connection.db.listCollections().toArray();
-        res.json({ success: true, message: "✅ DB Connected", collections });
+        res.json({ success: true, message: " DB Connected", collections });
     } catch (err) {
-        res.status(500).json({ success: false, message: "❌ DB Not Connected", error: err.message });
+        res.status(500).json({ success: false, message: " DB Not Connected", error: err.message });
     }
 });
 

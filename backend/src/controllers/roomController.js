@@ -1,10 +1,10 @@
 const Room = require('../models/Room');
 const Booking = require('../models/Booking');
-const Timetable = require('../models/Timetable'); // ✅ new import
+const Timetable = require('../models/Timetable'); 
 
-// @desc    Get all rooms with optional filters
-// @route   GET /api/rooms
-// @access  Private
+// desc    Get all rooms with optional filters
+// route   GET /api/rooms
+// access  Private
 exports.getRooms = async (req, res) => {
     try {
         const { building, department, capacity } = req.query;
@@ -21,9 +21,9 @@ exports.getRooms = async (req, res) => {
     }
 };
 
-// @desc    Get single room by ID with timetable
-// @route   GET /api/rooms/:id
-// @access  Private
+// desc    Get single room by ID with timetable
+// route   GET /api/rooms/:id
+// access  Private
 exports.getRoomById = async (req, res) => {
     try {
         const room = await Room.findById(req.params.id);
@@ -55,9 +55,9 @@ exports.getRoomById = async (req, res) => {
     }
 };
 
-// @desc    Add a new room
-// @route   POST /api/rooms
-// @access  Admin
+// desc    Add a new room
+// route   POST /api/rooms
+// access  Admin
 exports.addRoom = async (req, res) => {
     try {
         let { name, building, department, capacity, status, type, location } = req.body;
@@ -101,9 +101,9 @@ exports.addRoom = async (req, res) => {
     }
 };
 
-// @desc    Update room status (e.g., available → maintenance)
-// @route   PUT /api/rooms/:id
-// @access  Admin
+// desc    Update room status (e.g., available → maintenance)
+// route   PUT /api/rooms/:id
+// access  Admin
 exports.updateRoomStatus = async (req, res) => {
     try {
         const room = await Room.findById(req.params.id);
@@ -134,9 +134,9 @@ exports.updateRoomStatus = async (req, res) => {
     }
 };
 
-// @desc    Delete a room
-// @route   DELETE /api/rooms/:id
-// @access  Admin
+// desc    Delete a room
+// route   DELETE /api/rooms/:id
+// access  Admin
 exports.deleteRoom = async (req, res) => {
     try {
         const room = await Room.findById(req.params.id);
@@ -151,9 +151,9 @@ exports.deleteRoom = async (req, res) => {
     }
 };
 
-// @desc    Check room availability (against timetable + bookings)
-// @route   POST /api/rooms/check-availability
-// @access  Faculty/Student
+// desc    Check room availability (against timetable + bookings)
+// route   POST /api/rooms/check-availability
+// access  Faculty/Student
 exports.checkAvailability = async (req, res) => {
     try {
         const { roomId, date, startTime, endTime } = req.body;
@@ -165,7 +165,7 @@ exports.checkAvailability = async (req, res) => {
 
         const dayOfWeek = new Date(date).toLocaleDateString('en-US', { weekday: 'long' });
 
-        // 1. Check against timetable in Timetable collection ✅
+        // 1. Check against timetable in Timetable collection 
         const timetableDay = await Timetable.findOne({
             roomId,
             day: dayOfWeek,
@@ -197,7 +197,7 @@ exports.checkAvailability = async (req, res) => {
         }
 
         // If no conflicts
-        res.status(200).json({ available: true, message: "Room is available ✅" });
+        res.status(200).json({ available: true, message: "Room is available " });
 
     } catch (error) {
         res.status(500).json({ message: error.message });

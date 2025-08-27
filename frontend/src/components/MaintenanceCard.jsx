@@ -1,4 +1,3 @@
-// src/components/MaintenanceCard.jsx
 import React from "react";
 import { AlertTriangle, Calendar, User, Wrench, CheckCircle, Clock, X } from "lucide-react";
 import { formatDate } from "../utils/formatDate";

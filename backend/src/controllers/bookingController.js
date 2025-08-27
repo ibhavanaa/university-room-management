@@ -1,4 +1,3 @@
-// controllers/bookingController.js
 const Booking = require("../models/Booking");
 const Room = require("../models/Room");
 const User = require("../models/User");
@@ -6,7 +5,7 @@ const Timetable = require("../models/Timetable");
 const { sendEmail } = require("../utils/emailService");
 const eventBus = require("../utils/eventBus");
 
-// ---------------------- Helpers ----------------------
+//  Helper functions
 
 function normalizeTime(t) {
   if (!t) return null;
@@ -89,12 +88,12 @@ function subtractSlot(slots, remove) {
   return result;
 }
 
-// ---------------------- Controllers ----------------------
 
-/**
- * @desc Create a booking request
- * @route POST /api/bookings
- * @access Student/Faculty
+
+/*
+  description Create a booking request
+  route POST /api/bookings
+  access Student/Faculty
  */
 exports.createBooking = async (req, res) => {
   try {
@@ -190,9 +189,9 @@ exports.createBooking = async (req, res) => {
   }
 };
 
-/**
- * @desc Approve or decline booking (Admin only)
- * @route PATCH /api/bookings/:id
+/*
+ description Approve or decline booking (Admin only)
+ route PATCH /api/bookings/:id
  */
 exports.updateBookingStatus = async (req, res) => {
   try {
@@ -232,9 +231,9 @@ exports.updateBookingStatus = async (req, res) => {
   }
 };
 
-/**
- * @desc Get logged-in user's bookings
- * @route GET /api/bookings/me?filter=upcoming|history|all
+/*
+ desc Get logged-in user's bookings
+ route GET /api/bookings/me?filter=upcoming|history|all
  */
 exports.getMyBookings = async (req, res) => {
   try {
@@ -256,9 +255,9 @@ exports.getMyBookings = async (req, res) => {
   }
 };
 
-/**
- * @desc Get all bookings (Admin)
- * @route GET /api/bookings
+/*
+ desc Get all bookings (Admin)
+ route GET /api/bookings
  */
 exports.getAllBookings = async (req, res) => {
   try {
@@ -294,9 +293,9 @@ exports.getAllBookings = async (req, res) => {
   }
 };
 
-/**
- * @desc Get availability of a room for a date
- * @route GET /api/rooms/:id/availability?date=YYYY-MM-DD
+/*
+ desc Get availability of a room for a date
+ @route GET /api/rooms/:id/availability?date=YYYY-MM-DD
  */
 exports.getRoomAvailability = async (req, res) => {
   try {

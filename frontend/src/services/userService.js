@@ -1,4 +1,3 @@
-// src/services/userService.js
 import axios from "../utils/axiosInstance";
 
 const userService = {

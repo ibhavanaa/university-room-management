@@ -1,4 +1,3 @@
-// src/pages/availability/AvailabilityChecker.jsx
 import React, { useState, useEffect } from "react";
 import roomService from "../../services/roomService";
 
@@ -40,10 +39,10 @@ function AvailabilityChecker() {
         endTime,
       });
       if (resp.data?.available) {
-        setStatus("✅ Room is Available");
+        setStatus(" Room is Available");
         setReason("");
       } else {
-        setStatus("❌ Room is Occupied");
+        setStatus(" Room is Occupied");
         setReason(resp.data?.reason || "Busy");
       }
     } catch (err) {

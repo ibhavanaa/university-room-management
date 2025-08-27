@@ -1,4 +1,3 @@
-// src/pages/bookings/MyBookings.jsx
 import React, { useState, useEffect } from 'react';
 import { getMyBookings } from '../../services/bookingService';
 import BookingCard from '../../components/BookingCard';

@@ -1,4 +1,3 @@
-// routes/maintenanceRoutes.js
 const express = require('express');
 const {
     createMaintenanceRequest,

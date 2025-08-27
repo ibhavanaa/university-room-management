@@ -30,7 +30,7 @@ async function migrate() {
         }
     }
 
-    console.log("✅ Migration complete");
+    console.log("Migration complete");
     process.exit(0);
 }
 

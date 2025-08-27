@@ -1,9 +1,9 @@
 const Room = require('../models/Room');
 const Booking = require('../models/Booking');
 
-// @desc Get weekly availability calendar for a room
-// @route GET /api/calendar/:roomId?weekStart=YYYY-MM-DD
-// @access Admin
+// description Get weekly availability calendar for a room
+// route GET /api/calendar/:roomId?weekStart=YYYY-MM-DD
+// access Admin
 exports.getRoomCalendar = async (req, res) => {
     try {
         const { roomId } = req.params;

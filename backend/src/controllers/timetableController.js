@@ -1,11 +1,10 @@
-// controllers/timetableController.js
 const XLSX = require("xlsx");
 const fs = require("fs");
 const csv = require("csv-parser");
 const Room = require("../models/Room");
 const Timetable = require("../models/Timetable");
 
-// ✅ Helper: normalize to "HH:mm"
+// Helper: normalize to "HH:mm"
 function normalizeTime(t) {
     if (!t) return null;
 
@@ -27,12 +26,13 @@ function normalizeTime(t) {
     return null;
 }
 
-// ✅ Helper: check if two times overlap
+// Helper: check if two times overlap
 function isOverlap(start1, end1, start2, end2) {
     return start1 < end2 && start2 < end1;
 }
 
-// @desc Upload and parse timetable (Excel or CSV)
+// description Upload and parse timetable (Excel or CSV)
+// access admin
 exports.uploadTimetable = async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ message: "Please upload a file" });
@@ -106,7 +106,7 @@ exports.uploadTimetable = async (req, res) => {
             // Do not embed timetable in Room; rely on Timetable collection
 
             return res.status(200).json({
-                message: "Timetable uploaded successfully ✅",
+                message: "Timetable uploaded successfully",
                 totalRows: rows.length,
                 roomId: room._id,
                 days: Object.keys(timetableMap).length
@@ -195,7 +195,7 @@ exports.uploadTimetable = async (req, res) => {
         }
 
         const result = {
-            message: "Bulk timetable uploaded successfully ✅",
+            message: "Bulk timetable uploaded successfully ",
             totalRows: rows.length,
             roomsProcessed
         };

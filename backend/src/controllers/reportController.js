@@ -1,4 +1,3 @@
-// controllers/reportController.js
 const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit');
 const { Parser } = require('json2csv');
@@ -22,9 +21,9 @@ const formatDate = (date) => {
     }
 };
 
-// @desc    Export bookings as Excel
-// @route   GET /api/reports/bookings/excel
-// @access  Admin
+// desc    Export bookings as Excel
+// route   GET /api/reports/bookings/excel
+// access  Admin
 exports.exportBookingsExcel = async (req, res) => {
     try {
         const bookings = await Booking.find()
@@ -72,9 +71,9 @@ exports.exportBookingsExcel = async (req, res) => {
     }
 };
 
-// @desc    Export bookings as CSV
-// @route   GET /api/reports/bookings/csv
-// @access  Admin
+// desc    Export bookings as CSV
+// route   GET /api/reports/bookings/csv
+// access  Admin
 exports.exportBookingsCSV = async (req, res) => {
     try {
         const bookings = await Booking.find()
@@ -103,9 +102,9 @@ exports.exportBookingsCSV = async (req, res) => {
     }
 };
 
-// @desc    Export bookings as PDF
-// @route   GET /api/reports/bookings/pdf
-// @access  Admin
+// desc    Export bookings as PDF
+// route   GET /api/reports/bookings/pdf
+// access  Admin
 exports.exportBookingsPDF = async (req, res) => {
     try {
         const bookings = await Booking.find()
