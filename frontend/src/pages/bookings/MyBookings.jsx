@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from "react";
-import { getMyBookings, updateBookingStatus } from "../../services/bookingService";
-import BookingCard from "../../components/BookingCard"; // ← Should be default import
-import { toast } from "react-toastify";
+// src/pages/bookings/MyBookings.jsx
+import React, { useState, useEffect } from 'react';
+import { getMyBookings } from '../../services/bookingService';
+import BookingCard from '../../components/BookingCard';
 
-function MyBookings() {
+const MyBookings = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     fetchMyBookings();
@@ -15,52 +16,49 @@ function MyBookings() {
     try {
       const response = await getMyBookings();
       setBookings(response.data);
-    } catch (error) {
-      console.error("Failed to fetch bookings:", error);
-      toast.error("Failed to load your bookings");
+    } catch (err) {
+      setError('Failed to fetch bookings');
+      console.error('Error fetching bookings:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCancelBooking = async (bookingId) => {
-    try {
-      await updateBookingStatus(bookingId, { status: "Cancelled" });
-      
-      setBookings(prev => prev.map(booking =>
-        booking._id === bookingId ? { ...booking, status: "Cancelled" } : booking
-      ));
-      
-      toast.success("Booking cancelled successfully!");
-    } catch (error) {
-      console.error("Failed to cancel booking:", error);
-      toast.error("Failed to cancel booking");
-    }
-  };
-
-  if (loading) {
-    return <div className="p-6">Loading your bookings...</div>;
-  }
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <span className="ml-3 text-gray-600">Loading bookings...</span>
+    </div>
+  );
+  
+  if (error) return (
+    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+      {error}
+    </div>
+  );
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-6">My Bookings</h2>
-      <div className="grid gap-4">
-        {bookings.map((booking) => (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-6">My Bookings</h1>
+      
+      <div className="grid grid-cols-1 gap-4">
+        {bookings.map(booking => (
           <BookingCard
             key={booking._id}
             booking={booking}
-            onCancel={() => handleCancelBooking(booking._id)}
+            showAdminActions={false}
+            showUserInfo={false}
           />
         ))}
       </div>
-      {bookings.length === 0 && (
+      
+      {bookings.length === 0 && !loading && (
         <div className="text-center py-8 text-gray-500">
-          You haven't made any bookings yet.
+          You don't have any bookings yet.
         </div>
       )}
     </div>
   );
-}
+};
 
 export default MyBookings;

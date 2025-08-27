@@ -1,29 +1,22 @@
-// src/services/roomService.js
-import api from './api';
+import api from "../utils/axiosInstance";
 
-export const roomService = {
-  getAllRooms: () => {
-    return api.get('/api/rooms');
-  },
-  
-  getRoomById: (id) => {
-    return api.get(`/api/rooms/${id}`);
-  },
-  
-  checkRoomAvailability: (roomId, dateTime) => {
-    return api.get(`/api/rooms/${roomId}/availability?datetime=${dateTime}`);
-  },
-  
-  // Admin only functions
-  createRoom: (roomData) => {
-    return api.post('/api/rooms', roomData);
-  },
-  
-  updateRoom: (id, roomData) => {
-    return api.patch(`/api/rooms/${id}`, roomData);
-  },
-  
-  deleteRoom: (id) => {
-    return api.delete(`/api/rooms/${id}`);
-  }
+// GET rooms (with optional filters like capacity)
+export const getRooms = (params = {}) => api.get("/rooms", { params });
+
+export const getRoomById = (id) => api.get(`/rooms/${id}`);
+export const getAllRooms = () => api.get("/rooms");
+export const createRoom = (data) => api.post("/rooms", data);
+export const updateRoom = (id, data) => api.put(`/rooms/${id}`, data);
+export const deleteRoom = (id) => api.delete(`/rooms/${id}`);
+export const checkRoomAvailability = ({ roomId, date, startTime, endTime }) =>
+  api.post(`/rooms/check-availability`, { roomId, date, startTime, endTime });
+
+export default {
+  getRooms,
+  getRoomById,
+  getAllRooms,
+  createRoom,
+  updateRoom,
+  deleteRoom,
+  checkRoomAvailability,
 };

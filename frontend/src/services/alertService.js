@@ -1,5 +1,4 @@
-import API from "./api";
+import api from "./api";
 
-export const createAlert = (data) => API.post("/alerts", data);
-
-export const getAlerts = () => API.get("/alerts");
+export const createAlert = async (data) => api.post("/alerts", data);
+export const getAlerts = async () => api.get("/alerts");

@@ -35,16 +35,11 @@ function isOverlap(start1, end1, start2, end2) {
 // @desc Upload and parse timetable (Excel or CSV)
 exports.uploadTimetable = async (req, res) => {
     try {
-        const { roomId } = req.body;
         if (!req.file) return res.status(400).json({ message: "Please upload a file" });
+        const singleRoomId = req.params.roomId || req.body.roomId || null;
 
-        const room = await Room.findById(roomId);
-        if (!room) {
-            fs.unlinkSync(req.file.path);
-            return res.status(404).json({ message: "Room not found" });
-        }
-
-        const ext = req.file.originalname.split(".").pop().toLowerCase();
+        const originalName = req.file.originalname;
+        const ext = originalName.split(".").pop().toLowerCase();
         let rows = [];
 
         if (ext === "xlsx") {
@@ -66,57 +61,147 @@ exports.uploadTimetable = async (req, res) => {
         if (!rows.length) {
             return res.status(400).json({ message: "Uploaded file is empty" });
         }
+        // If a specific roomId is provided → single-room mode
+        if (singleRoomId) {
+            const room = await Room.findById(singleRoomId);
+            if (!room) {
+                return res.status(404).json({ message: "Room not found" });
+            }
 
-        // Clear old timetable for this room
-        await Timetable.deleteMany({ roomId });
+            // Clear existing
+            await Timetable.deleteMany({ roomId: singleRoomId });
 
-        const timetableMap = {};
+            const timetableMap = {};
+            const errors = [];
+
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const day = row["Day"] || row["day"] || row["DAY"];
+                const startTime = normalizeTime(row["Start Time"] || row["startTime"] || row["Start"]);
+                const endTime = normalizeTime(row["End Time"] || row["endTime"] || row["End"]);
+                const course = row["Subject"] || row["Course"] || row["course"];
+                const faculty = row["Faculty"] || row["faculty"];
+
+                if (!day || !startTime || !endTime || !course) {
+                    errors.push(`Row ${i + 1}: Missing required fields`);
+                    continue;
+                }
+
+                if (!timetableMap[day]) timetableMap[day] = [];
+                for (const lec of timetableMap[day]) {
+                    if (isOverlap(startTime, endTime, lec.startTime, lec.endTime)) {
+                        errors.push(`Row ${i + 1}: Overlaps with another lecture on ${day}`);
+                    }
+                }
+                timetableMap[day].push({ startTime, endTime, course, faculty });
+            }
+
+            if (errors.length) {
+                return res.status(400).json({ message: "Validation failed", errors });
+            }
+
+            for (const day of Object.keys(timetableMap)) {
+                await new Timetable({ roomId: singleRoomId, day, lectures: timetableMap[day] }).save();
+            }
+            // Do not embed timetable in Room; rely on Timetable collection
+
+            return res.status(200).json({
+                message: "Timetable uploaded successfully ✅",
+                totalRows: rows.length,
+                roomId: room._id,
+                days: Object.keys(timetableMap).length
+            });
+        }
+
+        // Bulk mode (no roomId): prefer columns for Room identity
+        // Preferred identity columns: Name, Building, Department
+        // Required lecture columns: Day, Start Time, End Time, Subject/Course (Faculty optional)
+        const normalize = (v) => (v || "").toString().trim();
+        const lower = (v) => normalize(v).toLowerCase();
+        const grouped = new Map(); // key → { meta, byDay }
         const errors = [];
+        let hasIdentityColumns = false;
 
         for (let i = 0; i < rows.length; i++) {
             const row = rows[i];
-            const day = row["Day"] || row["day"] || row["DAY"];
-            const startTime = normalizeTime(row["Start Time"] || row["startTime"] || row["Start"]);
-            const endTime = normalizeTime(row["End Time"] || row["endTime"] || row["End"]);
-            const course = row["Subject"] || row["Course"] || row["course"];
+            const name = row["Name"] || row["Room"] || row["Room Name"];
+            const building = row["Building"] || row["building"];
+            const department = row["Department"] || row["department"];
+            const day = row["Day"] || row["day"] || row["DAY"]; // allow case variants
+            const startTime = normalizeTime(row["Start Time"] || row["startTime"] || row["Start"] || row["From"]);
+            const endTime = normalizeTime(row["End Time"] || row["endTime"] || row["End"] || row["To"]);
+            const course = row["Subject"] || row["Course"] || row["course"] || row["Subject Name"];
             const faculty = row["Faculty"] || row["faculty"];
+
+            if (name && building && department) {
+                hasIdentityColumns = true;
+            }
 
             if (!day || !startTime || !endTime || !course) {
                 errors.push(`Row ${i + 1}: Missing required fields`);
                 continue;
             }
 
-            if (!timetableMap[day]) timetableMap[day] = [];
-
-            // Check for overlaps with existing lectures on same day
-            for (const lec of timetableMap[day]) {
+            const key = (name && building && department)
+              ? [lower(name), lower(building), lower(department)].join("|")
+              : "__default_room__";
+            if (!grouped.has(key)) {
+                // If identity missing, we will derive from filename later
+                grouped.set(key, { meta: { name: normalize(name), building: normalize(building), department: normalize(department) }, byDay: {} });
+            }
+            const bucket = grouped.get(key);
+            if (!bucket.byDay[day]) bucket.byDay[day] = [];
+            // simple overlap check within bucket
+            for (const lec of bucket.byDay[day]) {
                 if (isOverlap(startTime, endTime, lec.startTime, lec.endTime)) {
-                    errors.push(`Row ${i + 1}: Overlaps with another lecture on ${day}`);
+                    errors.push(`Row ${i + 1}: Overlaps in ${name} on ${day}`);
                 }
             }
-
-            timetableMap[day].push({ startTime, endTime, course, faculty });
+            bucket.byDay[day].push({ startTime, endTime, course, faculty });
         }
 
         if (errors.length) {
             return res.status(400).json({ message: "Validation failed", errors });
         }
 
-        // Save timetable per day
-        for (const day of Object.keys(timetableMap)) {
-            const timetableEntry = new Timetable({
-                roomId,
-                day,
-                lectures: timetableMap[day],
+        // For each room group: upsert Room, replace its Timetable docs, and embed into Room
+        let roomsProcessed = 0;
+        for (const [key, bucket] of grouped.entries()) {
+            let { name, building, department } = bucket.meta;
+            if (key === "__default_room__" || !hasIdentityColumns) {
+                // Derive a readable room name from file name if not provided
+                const base = originalName.replace(/\.[^.]+$/, "");
+                name = name || base;
+                building = building || "Unknown";
+                department = department || "Unknown";
+            }
+            // Try to find by normalized keys
+            const room = await Room.findOne({
+                nameKey: lower(name),
+                buildingKey: lower(building),
+                departmentKey: lower(department)
             });
-            await timetableEntry.save();
+            let roomDoc = room;
+            if (!roomDoc) {
+                roomDoc = await Room.create({ name, building, department, capacity: 0, status: "available" });
+            }
+
+            await Timetable.deleteMany({ roomId: roomDoc._id });
+            for (const day of Object.keys(bucket.byDay)) {
+                await new Timetable({ roomId: roomDoc._id, day, lectures: bucket.byDay[day] }).save();
+            }
+            // Do not embed timetable in Room; rely on Timetable collection for retrieval
+            roomsProcessed += 1;
         }
 
-        res.status(200).json({
-            message: "Timetable uploaded successfully ✅",
+        const result = {
+            message: "Bulk timetable uploaded successfully ✅",
             totalRows: rows.length,
-            roomId: room._id,
-        });
+            roomsProcessed
+        };
+        // Signal clients to refresh rooms and timetables
+        try { require('../utils/eventBus').emit('timetable:update', { roomsProcessed }); } catch (e) {}
+        return res.status(200).json(result);
     } catch (error) {
         console.error("Upload Timetable Error:", error);
         res.status(500).json({ message: error.message });
@@ -133,13 +218,27 @@ exports.getTimetableByRoomId = async (req, res) => {
             return res.status(404).json({ message: "Room not found" });
         }
 
-        const timetable = await Timetable.find({ roomId });
+        const timetableDocs = await Timetable.find({ roomId }).sort({
+            day: 1,
+            'lectures.startTime': 1
+        });
+
+        // Format the timetable data to match your expected structure
+        const formattedTimetable = timetableDocs.map(doc => ({
+            day: doc.day,
+            lectures: doc.lectures.map(lecture => ({
+                startTime: lecture.startTime,
+                endTime: lecture.endTime,
+                course: lecture.course,
+                faculty: lecture.faculty
+            }))
+        }));
 
         res.status(200).json({
             roomName: room.name,
             building: room.building,
             department: room.department,
-            timetable,
+            timetable: formattedTimetable,  // Use the formatted data
         });
     } catch (error) {
         res.status(500).json({ message: error.message });

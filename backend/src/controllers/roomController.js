@@ -21,7 +21,7 @@ exports.getRooms = async (req, res) => {
     }
 };
 
-// @desc    Get single room by ID
+// @desc    Get single room by ID with timetable
 // @route   GET /api/rooms/:id
 // @access  Private
 exports.getRoomById = async (req, res) => {
@@ -30,7 +30,26 @@ exports.getRoomById = async (req, res) => {
         if (!room) {
             return res.status(404).json({ message: "Room not found" });
         }
-        res.json(room);
+
+        // Get timetable from Timetable collection
+        const timetableDocs = await Timetable.find({ roomId: req.params.id }).sort({
+            day: 1,
+            'lectures.startTime': 1
+        });
+
+        // Format the timetable data properly
+        const formattedTimetable = timetableDocs.map(doc => ({
+            day: doc.day,
+            lectures: doc.lectures
+        }));
+
+        // Return room with populated timetable in the expected format
+        res.json({
+            roomName: room.name,
+            building: room.building,
+            department: room.department,
+            timetable: formattedTimetable // This should now contain the actual data
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -41,13 +60,43 @@ exports.getRoomById = async (req, res) => {
 // @access  Admin
 exports.addRoom = async (req, res) => {
     try {
-        const { name, building, department, capacity } = req.body;
+        let { name, building, department, capacity, status, type, location } = req.body;
+        // Normalize whitespace early
+        name = (name || '').trim();
+        building = (building || '').trim();
+        department = (department || '').trim();
 
-        const room = new Room({ name, building, department, capacity });
+        // Normalize identity fields
+        const normalize = (v) => (v || '').toString().trim().toLowerCase();
+        const nameKey = normalize(name);
+        const buildingKey = normalize(building);
+        const departmentKey = normalize(department);
+
+        // Fallback duplicate check in case index hasn't been built yet
+        // Check existing via normalized keys
+        const exists = await Room.findOne({ nameKey, buildingKey, departmentKey }).lean();
+        if (exists) {
+            return res.status(409).json({ message: "Room already exists" });
+        }
+
+        // Also check legacy docs without normalized keys using case-insensitive collation
+        const legacyExists = await Room.findOne({ name, building, department })
+            .collation({ locale: 'en', strength: 2 })
+            .lean();
+        if (legacyExists) {
+            return res.status(409).json({ message: "Room already exists" });
+        }
+
+        // Create
+        const room = new Room({ name, building, department, capacity, status, type, location });
         await room.save();
 
         res.status(201).json({ message: "Room added successfully", room });
     } catch (error) {
+        // Handle duplicate key error from unique index
+        if (error.code === 11000) {
+            return res.status(409).json({ message: "Room already exists" });
+        }
         res.status(500).json({ message: error.message });
     }
 };
@@ -62,10 +111,24 @@ exports.updateRoomStatus = async (req, res) => {
             return res.status(404).json({ message: "Room not found" });
         }
 
-        room.status = req.body.status || room.status;
+        // Allow updating multiple fields
+        const updatableFields = [
+            'name',
+            'building',
+            'department',
+            'capacity',
+            'status',
+            'type',
+            'location'
+        ];
+        updatableFields.forEach((field) => {
+            if (typeof req.body[field] !== 'undefined') {
+                room[field] = req.body[field];
+            }
+        });
         await room.save();
 
-        res.json({ message: "Room status updated", room });
+        res.json({ message: "Room updated", room });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

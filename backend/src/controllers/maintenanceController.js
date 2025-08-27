@@ -4,25 +4,41 @@ const Room = require('../models/Room');
 // @desc    Submit a maintenance request
 // @route   POST /api/maintenance
 // @access  Student/Faculty
+// src/controllers/maintenanceController.js
 exports.createMaintenanceRequest = async (req, res) => {
     try {
-        const { roomId, issueDescription } = req.body;
+        const { room, issueDescription } = req.body;
 
-        const room = await Room.findById(roomId);
-        if (!room) {
+        if (!room || !issueDescription) {
+            return res.status(400).json({ 
+                message: "Room ID and issue description are required" 
+            });
+        }
+
+        const roomDoc = await Room.findById(room);
+        if (!roomDoc) {
             return res.status(404).json({ message: "Room not found" });
         }
 
         const maintenance = await Maintenance.create({
             user: req.user._id,
-            room: roomId,
-            issueDescription,
-            image: req.file ? `/uploads/${req.file.filename}` : null,
+            room: room,
+            issueDescription: issueDescription,
+            image: req.file ? `/uploads/maintenance/${req.file.filename}` : null,
             status: 'pending'
         });
 
-        res.status(201).json({ message: "Maintenance request submitted", maintenance });
+        res.status(201).json({ 
+            message: "Maintenance request submitted successfully", 
+            maintenance 
+        });
     } catch (error) {
+        if (error.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({ message: 'File too large. Maximum size is 50MB' });
+        }
+        if (error.message.includes('Only image and video files')) {
+            return res.status(400).json({ message: error.message });
+        }
         res.status(500).json({ message: error.message });
     }
 };

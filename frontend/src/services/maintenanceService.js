@@ -1,10 +1,5 @@
-import API from "./api";
+import api from "./api";
 
-export const createRequest = (data) => API.post("/maintenance", data);
-
-export const getMyRequests = () => API.get("/maintenance/my");
-
-export const getAllRequests = () => API.get("/maintenance");
-
-export const updateRequestStatus = (id, status) =>
-  API.patch(`/maintenance/${id}`, { status });
+export const getAllRequests = async () => api.get("/maintenance");
+export const updateRequestStatus = async (id, status) =>
+  api.patch(`/maintenance/${id}`, { status });

@@ -5,6 +5,7 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const errorHandler = require('./src/middlewares/errorHandler');
 const timetableRoutes = require('./src/routes/timetableRoutes');
+const reportRoutes = require('./src/routes/reportRoutes');
 
 // Initialize express app
 const app = express();
@@ -29,13 +30,13 @@ const calendarRoutes = require('./src/routes/calendarRoutes');
 // Use Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/rooms', roomRoutes);
-app.use('/api/bookings', bookingRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/timetable', timetableRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Serve uploaded images
 app.use('/uploads', express.static('uploads'));

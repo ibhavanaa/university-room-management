@@ -1,24 +1,14 @@
-// src/services/bookingService.js
-import api from './api';
+import api from "../utils/axiosInstance";
 
-export const bookingService = {
-  createBooking: (bookingData) => {
-    return api.post('/api/bookings', bookingData);
-  },
-  
-  getMyBookings: () => {
-    return api.get('/api/bookings/my');
-  },
-  
-  getAllBookings: () => {
-    return api.get('/api/bookings');
-  },
-  
-  updateBooking: (id, bookingData) => {
-    return api.patch(`/api/bookings/${id}`, bookingData);
-  },
-  
-  deleteBooking: (id) => {
-    return api.delete(`/api/bookings/${id}`);
-  }
+export const getMyBookings = () => api.get("/bookings/my");
+export const getAllBookings = () => api.get("/bookings");
+export const createBooking = (data) => api.post("/bookings", data);
+export const updateBookingStatus = (id, status) =>
+  api.patch(`/bookings/${id}`, { status });
+
+export default {
+  getMyBookings,
+  getAllBookings,
+  createBooking,
+  updateBookingStatus,
 };

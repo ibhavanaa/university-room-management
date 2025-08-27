@@ -1,3 +1,3 @@
-import API from "./api";
+import api from "./api";
 
-export const getAnalytics = () => API.get("/analytics");
+export const getAnalytics = async () => api.get("/analytics");

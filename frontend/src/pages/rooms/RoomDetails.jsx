@@ -1,41 +1,68 @@
-import React from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { getRoomById } from "../../services/roomService";
+import { getTimetable } from "../../services/timetableService";
 
-function RoomDetails() {
+const RoomDetails = () => {
   const { id } = useParams();
+  const [room, setRoom] = useState(null);
+  const [timetable, setTimetable] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // TODO: Replace with API call -> GET /api/rooms/:id
-  const room = {
-    _id: id,
-    building: "A",
-    department: "CS",
-    capacity: 40,
-    timetable: ["Mon 10-11", "Tue 2-3"],
-  };
+  useEffect(() => {
+    const fetchDetails = async () => {
+      try {
+        const roomRes = await getRoomById(id);
+        setRoom(roomRes.data);
+
+        const ttRes = await getTimetable(id);
+        setTimetable(ttRes.data);
+      } catch (err) {
+        console.error("Error loading room details", err);
+      }
+      setLoading(false);
+    };
+    fetchDetails();
+  }, [id]);
+
+  if (loading) return <p>Loading...</p>;
+  if (!room) return <p>Room not found</p>;
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4">Room Details</h2>
-      <div className="bg-white shadow rounded p-4">
-        <p>
-          <strong>Building:</strong> {room.building}
-        </p>
-        <p>
-          <strong>Department:</strong> {room.department}
-        </p>
-        <p>
-          <strong>Capacity:</strong> {room.capacity}
-        </p>
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold">{room.building} - {room.department}</h2>
+      <p><strong>Capacity:</strong> {room.capacity}</p>
 
-        <h3 className="text-xl font-semibold mt-4">Weekly Timetable</h3>
-        <ul className="list-disc ml-6">
-          {room.timetable.map((slot, i) => (
-            <li key={i}>{slot}</li>
-          ))}
-        </ul>
+      {/* Timetable */}
+      <div>
+        <h3 className="text-lg font-semibold mb-2">Weekly Timetable</h3>
+        {timetable.length === 0 ? (
+          <p>No timetable uploaded.</p>
+        ) : (
+          <table className="w-full border text-sm">
+            <thead className="bg-slate-100">
+              <tr>
+                <th className="p-2 border">Day</th>
+                <th className="p-2 border">Time</th>
+                <th className="p-2 border">Course</th>
+                <th className="p-2 border">Faculty</th>
+              </tr>
+            </thead>
+            <tbody>
+              {timetable.map((entry, idx) => (
+                <tr key={idx} className="hover:bg-slate-50">
+                  <td className="p-2 border">{entry.day}</td>
+                  <td className="p-2 border">{entry.time}</td>
+                  <td className="p-2 border">{entry.course}</td>
+                  <td className="p-2 border">{entry.faculty}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
-}
+};
 
 export default RoomDetails;

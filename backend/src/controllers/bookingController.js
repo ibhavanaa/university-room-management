@@ -4,6 +4,7 @@ const Room = require("../models/Room");
 const User = require("../models/User");
 const Timetable = require("../models/Timetable");
 const { sendEmail } = require("../utils/emailService");
+const eventBus = require("../utils/eventBus");
 
 // ---------------------- Helpers ----------------------
 
@@ -48,6 +49,25 @@ async function cleanupOldBookings() {
     },
     { status: "Completed" }
   );
+}
+
+// Keep room.status in sync with active bookings
+async function syncRoomStatus(roomId) {
+  try {
+    const active = await Booking.countDocuments({
+      room: roomId,
+      status: { $in: ["Pending", "Approved"] }
+    });
+    const room = await Room.findById(roomId);
+    if (!room) return;
+    const desired = active > 0 ? "unavailable" : "available";
+    if (room.status !== desired && room.status !== "maintenance") {
+      room.status = desired;
+      await room.save();
+    }
+  } catch (e) {
+    console.warn("Room status sync failed:", e.message);
+  }
 }
 
 function subtractSlot(slots, remove) {
@@ -142,6 +162,12 @@ exports.createBooking = async (req, res) => {
       status: "Pending",
     });
 
+    // Reflect occupancy based on active bookings
+    await syncRoomStatus(roomId);
+
+    // Notify clients
+    eventBus.emit('booking:update', { type: 'created', bookingId: booking._id });
+
     // Email admin
     try {
       await sendEmail(
@@ -166,7 +192,7 @@ exports.createBooking = async (req, res) => {
 
 /**
  * @desc Approve or decline booking (Admin only)
- * @route PUT /api/bookings/:id
+ * @route PATCH /api/bookings/:id
  */
 exports.updateBookingStatus = async (req, res) => {
   try {
@@ -180,6 +206,12 @@ exports.updateBookingStatus = async (req, res) => {
 
     booking.status = status;
     await booking.save();
+
+    // Update room status based on active bookings
+    await syncRoomStatus(booking.room._id || booking.room);
+
+    // Notify clients
+    eventBus.emit('booking:update', { type: 'status', bookingId: booking._id, status });
 
     // Notify user
     try {
@@ -231,8 +263,32 @@ exports.getMyBookings = async (req, res) => {
 exports.getAllBookings = async (req, res) => {
   try {
     await cleanupOldBookings();
-    const bookings = await Booking.find().populate("room user");
-    res.status(200).json(bookings);
+    // Deduplicate in aggregation to ensure UI shows what DB actually has logically
+    const agg = await Booking.aggregate([
+      { $sort: { createdAt: 1 } },
+      {
+        $group: {
+          _id: {
+            room: "$room",
+            date: "$date",
+            start: "$startTime",
+            end: "$endTime",
+            purpose: { $toLower: { $ifNull: ["$purpose", ""] } },
+            email: { $toLower: { $ifNull: ["$userEmail", ""] } }
+          },
+          doc: { $last: "$$ROOT" }
+        }
+      },
+      { $replaceRoot: { newRoot: "$doc" } },
+      { $sort: { date: 1, startTime: 1 } }
+    ]);
+
+    const ids = agg.map(d => d._id);
+    const populated = await Booking.find({ _id: { $in: ids } })
+      .populate("room user")
+      .sort({ date: 1, startTime: 1 });
+
+    res.status(200).json(populated);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

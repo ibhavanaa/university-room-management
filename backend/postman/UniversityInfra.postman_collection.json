@@ -1,0 +1,319 @@
+{
+  "info": {
+    "name": "University Infra Management API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "b1a0f7fd-4b9a-4a7b-8b7a-collection"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api" },
+    { "key": "adminEmail", "value": "admin@example.com" },
+    { "key": "adminPassword", "value": "admin123" },
+    { "key": "studentEmail", "value": "student@example.com" },
+    { "key": "studentPassword", "value": "student123" },
+    { "key": "facultyEmail", "value": "faculty@example.com" },
+    { "key": "facultyPassword", "value": "faculty123" },
+    { "key": "adminToken", "value": "" },
+    { "key": "studentToken", "value": "" },
+    { "key": "facultyToken", "value": "" },
+    { "key": "roomId", "value": "" },
+    { "key": "bookingId", "value": "" },
+    { "key": "maintenanceId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1) Authentication & Roles",
+      "item": [
+        {
+          "name": "Register Student (201)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth","register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Student One\",\n  \"email\": \"{{studentEmail}}\",\n  \"password\": \"{{studentPassword}}\",\n  \"role\": \"student\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Register existing email (400)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth","register"] },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Duplicate\",\n  \"email\": \"{{studentEmail}}\",\n  \"password\": \"pass\",\n  \"role\": \"student\"\n}" }
+          }
+        },
+        {
+          "name": "Register missing fields (400)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth","register"] },
+            "body": { "mode": "raw", "raw": "{}" }
+          }
+        },
+        {
+          "name": "Login Student (200) → set studentToken",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', function () { pm.response.to.have.status(200); });",
+                  "var json = pm.response.json();",
+                  "if (json.token) { pm.collectionVariables.set('studentToken', json.token); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth","login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{studentEmail}}\",\n  \"password\": \"{{studentPassword}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login Admin (200) → set adminToken",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status 200', function () { pm.response.to.have.status(200); });",
+                  "var json = pm.response.json();",
+                  "if (json.token) { pm.collectionVariables.set('adminToken', json.token); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth","login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login wrong password (401)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth","login"] },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{studentEmail}}\",\n  \"password\": \"wrong\"\n}" }
+          }
+        },
+        {
+          "name": "Access profile without token (401)",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/auth/profile", "host": ["{{baseUrl}}"], "path": ["auth","profile"] } }
+        },
+        {
+          "name": "Access profile with token (200)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{studentToken}}" } ],
+            "url": { "raw": "{{baseUrl}}/auth/profile", "host": ["{{baseUrl}}"], "path": ["auth","profile"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2) Room & Lab Management",
+      "item": [
+        {
+          "name": "Admin adds room (201) → set roomId",
+          "event": [
+            { "listen": "test", "script": { "exec": [
+              "pm.test('201', function(){ pm.response.to.have.status(201); });",
+              "var json = pm.response.json(); if (json.room && json.room._id) pm.collectionVariables.set('roomId', json.room._id);"
+            ], "type": "text/javascript" } }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/rooms", "host": ["{{baseUrl}}"], "path": ["rooms"] },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Lab R101\",\n  \"building\": \"Management Block\",\n  \"department\": \"HR\",\n  \"capacity\": 40,\n  \"status\": \"available\",\n  \"type\": \"Lab\",\n  \"location\": \"1st floor\"\n}" }
+          }
+        },
+        {
+          "name": "Student tries to add room (403)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{studentToken}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/rooms", "host": ["{{baseUrl}}"], "path": ["rooms"] },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Test\",\n  \"building\": \"B\",\n  \"department\": \"D\",\n  \"capacity\": 10\n}" }
+          }
+        },
+        {
+          "name": "Get all rooms (capacity ≥ N)",
+          "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{studentToken}}" } ], "url": { "raw": "{{baseUrl}}/rooms?capacity=30", "host": ["{{baseUrl}}"], "path": ["rooms"], "query": [ {"key":"capacity","value":"30"} ] } }
+        },
+        {
+          "name": "Get room by ID (200)",
+          "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{studentToken}}" } ], "url": { "raw": "{{baseUrl}}/rooms/{{roomId}}", "host": ["{{baseUrl}}"], "path": ["rooms","{{roomId}}"] } }
+        },
+        {
+          "name": "Get non-existing room (404)",
+          "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{studentToken}}" } ], "url": { "raw": "{{baseUrl}}/rooms/000000000000000000000000", "host": ["{{baseUrl}}"], "path": ["rooms","000000000000000000000000"] } }
+        },
+        {
+          "name": "Update room as admin (200)",
+          "request": { "method": "PATCH", "header": [ { "key": "Authorization", "value": "Bearer {{adminToken}}" }, { "key": "Content-Type", "value": "application/json" } ], "url": { "raw": "{{baseUrl}}/rooms/{{roomId}}", "host": ["{{baseUrl}}"], "path": ["rooms","{{roomId}}"] }, "body": { "mode": "raw", "raw": "{\n  \"capacity\": 45\n}" } }
+        },
+        {
+          "name": "Update as student (403)",
+          "request": { "method": "PATCH", "header": [ { "key": "Authorization", "value": "Bearer {{studentToken}}" }, { "key": "Content-Type", "value": "application/json" } ], "url": { "raw": "{{baseUrl}}/rooms/{{roomId}}", "host": ["{{baseUrl}}"], "path": ["rooms","{{roomId}}"] }, "body": { "mode": "raw", "raw": "{\n  \"capacity\": 50\n}" } }
+        },
+        {
+          "name": "Delete room as admin (200)",
+          "request": { "method": "DELETE", "header": [ { "key": "Authorization", "value": "Bearer {{adminToken}}" } ], "url": { "raw": "{{baseUrl}}/rooms/{{roomId}}", "host": ["{{baseUrl}}"], "path": ["rooms","{{roomId}}"] } }
+        },
+        {
+          "name": "Delete non-existing room (404)",
+          "request": { "method": "DELETE", "header": [ { "key": "Authorization", "value": "Bearer {{adminToken}}" } ], "url": { "raw": "{{baseUrl}}/rooms/000000000000000000000000", "host": ["{{baseUrl}}"], "path": ["rooms","000000000000000000000000"] } }
+        }
+      ]
+    },
+    {
+      "name": "3) Timetable Management",
+      "item": [
+        {
+          "name": "Upload timetable (200)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{adminToken}}" } ],
+            "url": { "raw": "{{baseUrl}}/timetable/upload", "host": ["{{baseUrl}}"], "path": ["timetable","upload"] },
+            "body": { "mode": "formdata", "formdata": [ { "key": "file", "type": "file", "src": ["./backend/uploads/timetable.xlsx"] } ] }
+          }
+        },
+        {
+          "name": "Get timetable for room (200)",
+          "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{adminToken}}" } ], "url": { "raw": "{{baseUrl}}/timetable/{{roomId}}", "host": ["{{baseUrl}}"], "path": ["timetable","{{roomId}}"] } }
+        }
+      ]
+    },
+    {
+      "name": "4) Booking & Reservation System",
+      "item": [
+        {
+          "name": "Student requests booking (201) → set bookingId",
+          "event": [ { "listen": "test", "script": { "exec": [
+            "pm.test('201', function(){ pm.response.to.have.status(201); });",
+            "var json = pm.response.json(); if (json.booking && json.booking._id) pm.collectionVariables.set('bookingId', json.booking._id);"
+          ], "type": "text/javascript" } } ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{studentToken}}" }, { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/bookings", "host": ["{{baseUrl}}"], "path": ["bookings"] },
+            "body": { "mode": "raw", "raw": "{\n  \"roomId\": \"{{roomId}}\",\n  \"date\": \"2030-01-15\",\n  \"startTime\": \"11:30\",\n  \"endTime\": \"12:30\",\n  \"purpose\": \"Group Study\"\n}" }
+          }
+        },
+        {
+          "name": "Booking overlaps with timetable (400)",
+          "request": { "method": "POST", "header": [ { "key": "Authorization", "value": "Bearer {{studentToken}}" }, { "key": "Content-Type", "value": "application/json" } ], "url": { "raw": "{{baseUrl}}/bookings", "host": ["{{baseUrl}}"], "path": ["bookings"] }, "body": { "mode": "raw", "raw": "{\n  \"roomId\": \"{{roomId}}\",\n  \"date\": \"2030-01-15\",\n  \"startTime\": \"09:00\",\n  \"endTime\": \"10:00\",\n  \"purpose\": \"During class\"\n}" } }
+        },
+        {
+          "name": "Booking overlaps with another booking (400)",
+          "request": { "method": "POST", "header": [ { "key": "Authorization", "value": "Bearer {{studentToken}}" }, { "key": "Content-Type", "value": "application/json" } ], "url": { "raw": "{{baseUrl}}/bookings", "host": ["{{baseUrl}}"], "path": ["bookings"] }, "body": { "mode": "raw", "raw": "{\n  \"roomId\": \"{{roomId}}\",\n  \"date\": \"2030-01-15\",\n  \"startTime\": \"11:45\",\n  \"endTime\": \"12:00\",\n  \"purpose\": \"Overlap\"\n}" } }
+        },
+        {
+          "name": "Booking non-existing room (404)",
+          "request": { "method": "POST", "header": [ { "key": "Authorization", "value": "Bearer {{studentToken}}" }, { "key": "Content-Type", "value": "application/json" } ], "url": { "raw": "{{baseUrl}}/bookings", "host": ["{{baseUrl}}"], "path": ["bookings"] }, "body": { "mode": "raw", "raw": "{\n  \"roomId\": \"000000000000000000000000\",\n  \"date\": \"2030-01-15\",\n  \"startTime\": \"11:30\",\n  \"endTime\": \"12:30\",\n  \"purpose\": \"Invalid room\"\n}" } }
+        },
+        {
+          "name": "Student views own bookings (200)",
+          "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{studentToken}}" } ], "url": { "raw": "{{baseUrl}}/bookings/my", "host": ["{{baseUrl}}"], "path": ["bookings","my"] } }
+        },
+        {
+          "name": "Admin views all bookings (200)",
+          "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{adminToken}}" } ], "url": { "raw": "{{baseUrl}}/bookings", "host": ["{{baseUrl}}"], "path": ["bookings"] } }
+        },
+        {
+          "name": "Admin approves booking (200)",
+          "request": { "method": "PATCH", "header": [ { "key": "Authorization", "value": "Bearer {{adminToken}}" }, { "key": "Content-Type", "value": "application/json" } ], "url": { "raw": "{{baseUrl}}/bookings/{{bookingId}}", "host": ["{{baseUrl}}"], "path": ["bookings","{{bookingId}}"] }, "body": { "mode": "raw", "raw": "{\n  \"status\": \"Approved\"\n}" } }
+        },
+        {
+          "name": "Admin declines booking (200)",
+          "request": { "method": "PATCH", "header": [ { "key": "Authorization", "value": "Bearer {{adminToken}}" }, { "key": "Content-Type", "value": "application/json" } ], "url": { "raw": "{{baseUrl}}/bookings/{{bookingId}}", "host": ["{{baseUrl}}"], "path": ["bookings","{{bookingId}}"] }, "body": { "mode": "raw", "raw": "{\n  \"status\": \"Declined\"\n}" } }
+        },
+        {
+          "name": "Approve booking as student (403)",
+          "request": { "method": "PATCH", "header": [ { "key": "Authorization", "value": "Bearer {{studentToken}}" }, { "key": "Content-Type", "value": "application/json" } ], "url": { "raw": "{{baseUrl}}/bookings/{{bookingId}}", "host": ["{{baseUrl}}"], "path": ["bookings","{{bookingId}}"] }, "body": { "mode": "raw", "raw": "{\n  \"status\": \"Approved\"\n}" } }
+        }
+      ]
+    },
+    {
+      "name": "5) Maintenance & Facility",
+      "item": [
+        {
+          "name": "Student submits maintenance (201) → set maintenanceId",
+          "event": [ { "listen": "test", "script": { "exec": [
+            "pm.test('201', function(){ pm.response.to.have.status(201); });",
+            "var json = pm.response.json(); if (json.request && json.request._id) pm.collectionVariables.set('maintenanceId', json.request._id);"
+          ], "type": "text/javascript" } } ],
+          "request": { "method": "POST", "header": [ { "key": "Authorization", "value": "Bearer {{studentToken}}" }, { "key": "Content-Type", "value": "application/json" } ], "url": { "raw": "{{baseUrl}}/maintenance", "host": ["{{baseUrl}}"], "path": ["maintenance"] }, "body": { "mode": "raw", "raw": "{\n  \"roomId\": \"{{roomId}}\",\n  \"description\": \"Projector not working\"\n}" } }
+        },
+        {
+          "name": "Submit request without description (400)",
+          "request": { "method": "POST", "header": [ { "key": "Authorization", "value": "Bearer {{studentToken}}" }, { "key": "Content-Type", "value": "application/json" } ], "url": { "raw": "{{baseUrl}}/maintenance", "host": ["{{baseUrl}}"], "path": ["maintenance"] }, "body": { "mode": "raw", "raw": "{\n  \"roomId\": \"{{roomId}}\"\n}" } }
+        },
+        {
+          "name": "Student views own requests (200)",
+          "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{studentToken}}" } ], "url": { "raw": "{{baseUrl}}/maintenance/my", "host": ["{{baseUrl}}"], "path": ["maintenance","my"] } }
+        },
+        {
+          "name": "Admin views all requests (200)",
+          "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{adminToken}}" } ], "url": { "raw": "{{baseUrl}}/maintenance", "host": ["{{baseUrl}}"], "path": ["maintenance"] } }
+        },
+        {
+          "name": "Admin updates status (200)",
+          "request": { "method": "PATCH", "header": [ { "key": "Authorization", "value": "Bearer {{adminToken}}" }, { "key": "Content-Type", "value": "application/json" } ], "url": { "raw": "{{baseUrl}}/maintenance/{{maintenanceId}}", "host": ["{{baseUrl}}"], "path": ["maintenance","{{maintenanceId}}"] }, "body": { "mode": "raw", "raw": "{\n  \"status\": \"In Progress\"\n}" } }
+        },
+        {
+          "name": "Update non-existing request (404)",
+          "request": { "method": "PATCH", "header": [ { "key": "Authorization", "value": "Bearer {{adminToken}}" }, { "key": "Content-Type", "value": "application/json" } ], "url": { "raw": "{{baseUrl}}/maintenance/000000000000000000000000", "host": ["{{baseUrl}}"], "path": ["maintenance","000000000000000000000000"] }, "body": { "mode": "raw", "raw": "{\n  \"status\": \"Resolved\"\n}" } }
+        }
+      ]
+    },
+    {
+      "name": "6) Alerts",
+      "item": [
+        {
+          "name": "Admin posts an alert (201)",
+          "request": { "method": "POST", "header": [ { "key": "Authorization", "value": "Bearer {{adminToken}}" }, { "key": "Content-Type", "value": "application/json" } ], "url": { "raw": "{{baseUrl}}/alerts", "host": ["{{baseUrl}}"], "path": ["alerts"] }, "body": { "mode": "raw", "raw": "{\n  \"title\": \"Emergency Drill\",\n  \"message\": \"Evacuate to ground floor at 10AM\"\n}" } }
+        },
+        {
+          "name": "Student views alerts (200)",
+          "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{studentToken}}" } ], "url": { "raw": "{{baseUrl}}/alerts", "host": ["{{baseUrl}}"], "path": ["alerts"] } }
+        }
+      ]
+    },
+    {
+      "name": "7) Analytics",
+      "item": [
+        {
+          "name": "Admin gets booking stats (200)",
+          "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{adminToken}}" } ], "url": { "raw": "{{baseUrl}}/analytics/bookings", "host": ["{{baseUrl}}"], "path": ["analytics","bookings"] } }
+        },
+        {
+          "name": "Admin gets maintenance stats (200)",
+          "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{adminToken}}" } ], "url": { "raw": "{{baseUrl}}/analytics/maintenance", "host": ["{{baseUrl}}"], "path": ["analytics","maintenance"] } }
+        }
+      ]
+    }
+  ]
+}
+
+

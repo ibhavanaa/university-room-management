@@ -1,8 +1,7 @@
-// src/pages/rooms/RoomAvailability.jsx
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { roomService } from '../../services/roomService';
-import { bookingService } from '../../services/bookingService';
+import { getAllRooms, checkRoomAvailability } from '../../services/roomService';
+import { createBooking } from '../../services/bookingService';
 import RoomCard from '../../components/RoomCard';
 
 const RoomAvailability = () => {
@@ -22,7 +21,7 @@ const RoomAvailability = () => {
   const fetchAllRooms = async () => {
     try {
       setLoading(true);
-      const response = await roomService.getAllRooms();
+      const response = await getAllRooms();
       setRooms(response.data);
       setFilteredRooms(response.data);
     } catch (err) {
@@ -45,7 +44,7 @@ const RoomAvailability = () => {
       // For each room, check if it's available at the selected time
       const availabilityPromises = rooms.map(async (room) => {
         try {
-          const response = await roomService.checkRoomAvailability(room._id, dateTime);
+          const response = await checkRoomAvailability(room._id, dateTime);
           return {
             ...room,
             available: response.data.available,
@@ -83,10 +82,11 @@ const RoomAvailability = () => {
         date: date,
         startTime: time,
         endTime: calculateEndTime(time, 1), // Default to 1 hour booking
-        purpose: 'Study Session'
+        purpose: 'Study Session',
+        userEmail: user.email
       };
       
-      const response = await bookingService.createBooking(bookingData);
+      const response = await createBooking(bookingData);
       
       if (response.status === 201) {
         setSuccess('Room booked successfully!');

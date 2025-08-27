@@ -1,3 +1,4 @@
+// routes/maintenanceRoutes.js
 const express = require('express');
 const {
     createMaintenanceRequest,
@@ -6,7 +7,7 @@ const {
     updateRequestStatus
 } = require('../controllers/maintenanceController');
 const { protect, authorizeRoles } = require('../middlewares/authMiddleware');
-const upload = require('../utils/fileUpload');
+const { maintenanceUpload } = require('../utils/fileUpload'); // Import the new upload
 
 const router = express.Router();
 
@@ -15,7 +16,7 @@ router.post(
     '/',
     protect,
     authorizeRoles('student', 'faculty'),
-    upload.single('image'),
+    maintenanceUpload.single('image'), // Use maintenance-specific upload
     createMaintenanceRequest
 );
 

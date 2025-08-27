@@ -4,7 +4,7 @@ const {
     getTimetableByRoomId
 } = require('../controllers/timetableController');
 const { protect, authorizeRoles } = require('../middlewares/authMiddleware');
-const upload = require('../utils/fileUpload');
+const { upload } = require('../utils/fileUpload');
 
 const router = express.Router({ mergeParams: true }); 
 // mergeParams allows us to access :roomId from parent route

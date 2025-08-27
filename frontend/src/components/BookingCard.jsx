@@ -1,75 +1,185 @@
-import React from "react";
+// src/components/BookingCard.jsx
+import React, { useState } from "react";
+import { 
+  Calendar, 
+  Clock, 
+  MapPin, 
+  User, 
+  CheckCircle, 
+  XCircle, 
+  ClockIcon,
+  Edit3,
+  Trash2,
+  Loader
+} from "lucide-react";
+import { formatDate } from "../utils/formatDate";
 
-const BookingCard = ({ booking, isAdmin = false, onApprove, onReject }) => {
+const BookingCard = ({ 
+  booking, 
+  onStatusUpdate, 
+  onEdit,
+  onDelete,
+  showAdminActions = false,
+  showUserActions = false,
+  showUserInfo = false 
+}) => {
+  const [loading, setLoading] = useState(false);
+  const [actionType, setActionType] = useState('');
+
+  const getStatusColor = (status) => {
+    status = String(status || '').toLowerCase();
+    switch (status) {
+      case 'approved': return 'bg-green-100 text-green-800 border-green-200';
+      case 'declined': return 'bg-red-100 text-red-800 border-red-200';
+      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    status = String(status || '').toLowerCase();
+    switch (status) {
+      case 'approved': return <CheckCircle className="w-4 h-4" />;
+      case 'declined': return <XCircle className="w-4 h-4" />;
+      case 'pending': return <ClockIcon className="w-4 h-4" />;
+      default: return null;
+    }
+  };
+
+  const handleStatusUpdate = async (newStatus) => {
+    if (!onStatusUpdate) return;
+    
+    setLoading(true);
+    setActionType(newStatus);
+    try {
+      await onStatusUpdate(booking._id, newStatus);
+    } catch (error) {
+      console.error('Failed to update booking status:', error);
+    } finally {
+      setLoading(false);
+      setActionType('');
+    }
+  };
+
+  const handleEdit = () => {
+    if (onEdit) onEdit(booking);
+  };
+
+  const handleDelete = () => {
+    if (onDelete) onDelete(booking._id);
+  };
+
+  const isActionLoading = (action) => loading && actionType === action;
+
+  const statusLower = String(booking.status || '').toLowerCase();
+
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-      {/* Room and Basic Info */}
-      <div className="mb-4">
-        <h3 className="font-semibold text-lg text-blue-800 mb-2">
-          {booking.room?.name || booking.roomId || "Room"} Booking
-        </h3>
-        
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <p className="font-medium text-gray-700">Date:</p>
-            <p>{booking.date}</p>
-          </div>
-          <div>
-            <p className="font-medium text-gray-700">Time:</p>
-            <p>{booking.startTime} - {booking.endTime}</p>
-          </div>
+    <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition">
+      <div className="flex justify-between items-start mb-4">
+        <div className="flex-1">
+          <h3 className="text-lg font-semibold text-gray-800 mb-1">{booking.purpose}</h3>
+          <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 border ${getStatusColor(booking.status)}`}>
+            {getStatusIcon(booking.status)}
+            {String(booking.status || '').charAt(0).toUpperCase() + String(booking.status || '').slice(1).toLowerCase()}
+          </span>
         </div>
+        
+        {(showUserActions || showAdminActions) && (
+          <div className="flex space-x-2 ml-4">
+            {showUserActions && statusLower === 'pending' && (
+              <button
+                onClick={handleEdit}
+                className="text-blue-600 hover:text-blue-800 transition p-1 rounded hover:bg-blue-50"
+                aria-label="Edit booking"
+                disabled={loading}
+              >
+                <Edit3 size={18} />
+              </button>
+            )}
+            {showUserActions && statusLower === 'pending' && (
+              <button
+                onClick={handleDelete}
+                className="text-red-600 hover:text-red-800 transition p-1 rounded hover:bg-red-50"
+                aria-label="Delete booking"
+                disabled={loading}
+              >
+                <Trash2 size={18} />
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* User Information - Updated to match your API structure */}
-      {isAdmin && (
-        <div className="mb-4 p-3 bg-gray-50 rounded border">
-          <h4 className="font-medium text-gray-800 mb-2">Requested By:</h4>
-          <div className="space-y-1 text-sm">
-            <p><span className="font-medium">Name:</span> {booking.user?.name || booking.userName || "Unknown"}</p>
-            <p><span className="font-medium">Email:</span> {booking.user?.email || booking.userEmail || "No email"}</p>
-            <p><span className="font-medium">Role:</span> {booking.user?.role || "Unknown role"}</p>
-            <p><span className="font-medium">User ID:</span> {booking.user?._id || "N/A"}</p>
+      <div className="space-y-3">
+        <div className="flex items-center text-gray-600">
+          <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
+          <span className="truncate">{booking.room?.name} ({booking.room?.building})</span>
+        </div>
+
+        <div className="flex items-center text-gray-600">
+          <Calendar className="w-4 h-4 mr-2 flex-shrink-0" />
+          <span>{formatDate(booking.date)}</span>
+        </div>
+
+        <div className="flex items-center text-gray-600">
+          <Clock className="w-4 h-4 mr-2 flex-shrink-0" />
+          <span>{booking.startTime} - {booking.endTime}</span>
+        </div>
+
+        {showUserInfo && booking.user && (
+          <div className="flex items-center text-gray-600">
+            <User className="w-4 h-4 mr-2 flex-shrink-0" />
+            <span>{booking.user.name} ({booking.user.email})</span>
           </div>
+        )}
+
+        {booking.additionalNotes && (
+          <div className="pt-2">
+            <h4 className="text-sm font-medium text-gray-700 mb-1">Notes:</h4>
+            <p className="text-sm text-gray-600">{booking.additionalNotes}</p>
+          </div>
+        )}
+      </div>
+
+      {showAdminActions && statusLower === 'pending' && (
+        <div className="flex space-x-2 mt-4 pt-4 border-t border-gray-200">
+          <button
+            onClick={() => handleStatusUpdate('Approved')}
+            disabled={loading}
+            className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white py-2 px-4 rounded-lg transition flex items-center justify-center"
+          >
+            {isActionLoading('Approved') ? (
+              <>
+                <Loader className="w-4 h-4 animate-spin mr-2" />
+                Approving...
+              </>
+            ) : (
+              'Approve'
+            )}
+          </button>
+          <button
+            onClick={() => handleStatusUpdate('Declined')}
+            disabled={loading}
+            className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white py-2 px-4 rounded-lg transition flex items-center justify-center"
+          >
+            {isActionLoading('Declined') ? (
+              <>
+                <Loader className="w-4 h-4 animate-spin mr-2" />
+                Declining...
+              </>
+            ) : (
+              'Decline'
+            )}
+          </button>
         </div>
       )}
 
-      {/* Booking Purpose */}
-      <div className="mb-4">
-        <p className="font-medium text-gray-700">Purpose:</p>
-        <p className="text-gray-900">{booking.purpose || "Not specified"}</p>
-      </div>
-
-      {/* Status */}
-      <div className="mb-4">
-        <p className="font-medium text-gray-700">Status:</p>
-        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-          booking.status === 'Approved' ? 'bg-green-100 text-green-800' :
-          booking.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-          booking.status === 'Rejected' || booking.status === 'Declined' ? 'bg-red-100 text-red-800' :
-          booking.status === 'Cancelled' ? 'bg-gray-100 text-gray-800' :
-          booking.status === 'Completed' ? 'bg-blue-100 text-blue-800' :
-          'bg-gray-100 text-gray-800'
-        }`}>
-          {booking.status}
-        </span>
-      </div>
-
-      {/* Admin Actions - Only show for pending bookings */}
-      {isAdmin && booking.status === 'Pending' && (
-        <div className="mt-4 flex gap-3">
-          <button
-            onClick={onApprove}
-            className="bg-green-600 text-white px-4 py-2 rounded-md text-sm hover:bg-green-700 transition font-medium"
-          >
-            ✅ Approve
-          </button>
-          <button
-            onClick={onReject}
-            className="bg-red-600 text-white px-4 py-2 rounded-md text-sm hover:bg-red-700 transition font-medium"
-          >
-            ❌ Reject
-          </button>
+      {/* Show status for non-pending bookings in admin view */}
+      {showAdminActions && booking.status !== 'pending' && (
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <p className="text-sm text-gray-500">
+            Status: {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+          </p>
         </div>
       )}
     </div>

@@ -7,6 +7,10 @@ const connectDB = async () => {
             useUnifiedTopology: true
         });
         console.log(`MongoDB Connected: ${conn.connection.host}`);
+
+        // Ensure indexes are created in the background
+        await mongoose.connection.syncIndexes();
+        console.log('Mongoose indexes synchronized');
     } catch (error) {
         console.error("Error connecting to MongoDB:", error.message);
         process.exit(1);

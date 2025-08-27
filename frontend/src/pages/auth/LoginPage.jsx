@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Eye, EyeOff, LockKeyhole, User2, Building2 } from "lucide-react";
-import useAuth from "../../hooks/useAuth";
+import { useAuth } from "../../hooks/useAuth"; // FIXED: Changed to named import
 import { login } from "../../services/authService";
 
 function LoginPage() {
