@@ -125,7 +125,7 @@ exports.createBooking = async (req, res) => {
         const lEnd = toMinutes(lec.endTime);
         if (bStart < lEnd && bEnd > lStart) {
           return res.status(400).json({
-            message: `❌ Clashes with timetable: ${lec.course} (${lec.startTime} - ${lec.endTime})`
+            message: ` Clashes with timetable: ${lec.course} (${lec.startTime} - ${lec.endTime})`
           });
         }
       }
@@ -143,7 +143,7 @@ exports.createBooking = async (req, res) => {
       const xEnd = toMinutes(b.endTime);
       if (bStart < xEnd && bEnd > xStart) {
         return res.status(400).json({
-          message: `❌ Room already booked from ${b.startTime}-${b.endTime}`
+          message: ` Room already booked from ${b.startTime}-${b.endTime}`
         });
       }
     }
@@ -295,7 +295,7 @@ exports.getAllBookings = async (req, res) => {
 
 /*
  desc Get availability of a room for a date
- @route GET /api/rooms/:id/availability?date=YYYY-MM-DD
+ route GET /api/rooms/:id/availability?date=YYYY-MM-DD
  */
 exports.getRoomAvailability = async (req, res) => {
   try {
